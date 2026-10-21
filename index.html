@@ -137,7 +137,7 @@ exercises:[],
 neural:{decks:[],subjects:[]},heatmap:{},global_streak:0,last_active_date:null,detox_streak:0,detox_last_checkin:null,taskSortMode:'time',taskFilter:'all',taskCatFilter:'',avoidance_log:[],fail_log:[],discipline_debt:0,debrief_log:[],morning_intentions:[],win_log:[],weekly_reviews:[],sleep_log:[]};
 
 let S=clone(DEFAULT),synced=false,hist=[],tab='today',bTab='l',bm='m',tlOpen=false,dkT;
-const arr=['tasks','budget','workout_log','exercises','timeline','win_log','morning_intentions','fail_log','avoidance_log','debrief_log','weekly_reviews','sleep_log','weight_log'];
+const arr=['tasks','budget','workout_log','exercises','timeline','win_log','morning_intentions','fail_log','avoidance_log','debrief_log','weekly_reviews','sleep_log','weight_log','checkins','missed_log'];
 function fix(){const D=clone(DEFAULT);for(const k in D)if(S[k]==null)S[k]=D[k];S.profile={...D.profile,...S.profile};S.settings={...D.settings,...S.settings};
 arr.forEach(k=>{if(!Array.isArray(S[k]))S[k]=Object.values(S[k]||{})});
 for(const k in S.timeline_completed)if(!Array.isArray(S.timeline_completed[k]))S.timeline_completed[k]=Object.values(S.timeline_completed[k]||{});
