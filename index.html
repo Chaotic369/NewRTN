@@ -113,8 +113,8 @@ const mk=o=>({id:Date.now()+'',duration:25,time:null,category:null,priority:'nor
 
 const TL=[['07:00','System start: wake up [DISCIPLINE]'],['07:10','Maintenance: bath / brush [HEALTH]'],['07:30','Fuel: breakfast [HEALTH]'],['08:00','Neural compile: deep work [LOGIC]'],['11:00','Cache clear: stretch [HEALTH]'],['11:10','Fuel: mid-day nutrition [HEALTH]'],['12:10','Deployment: college [LOGIC]'],['17:20','Return to base [DISCIPLINE]'],['17:30','Fuel recharge: eat food [HEALTH]'],['18:00','Neural compile: study / code [LOGIC]'],['20:00','Fuel: evening nutrition [HEALTH]'],['20:30','Neural compile: final study block [MEMORY]'],['21:30','Physical protocol: exercise [STRENGTH]'],['22:10','Decompression: shower [HEALTH]'],['23:00','Night maintenance [DISCIPLINE]'],['23:30','Screen lock: read / plan [FOCUS]'],['00:00','Power down: sleep [HEALTH]']];
 const DEFAULT={profile:{username:'OPERATIVE',avatarUrl:''},settings:{},tasks:[],budget:[],
-timeline:TL.map(([time,label],i)=>({id:'t'+(i+1),time,label,color:'var(--blue)'})),workout_log:[],timeline_completed:{},timeline_completed_times:{},
-exercises:[['Wall Push-Ups','CHEST',12],['Dead Bugs','CORE',10],['Glute Bridges','GLUTES',15],['Plank Hold','CORE',20,1],['Bodyweight Squats','LEGS',20]].map(([name,group,r,h],i)=>({id:'e'+(i+1),name,group,targetSets:3,targetReps:r,prSets:0,prReps:0,isHold:!!h})),
+timeline:[],workout_log:[],timeline_completed:{},timeline_completed_times:{},
+exercises:[],
 neural:{decks:[],subjects:[]},heatmap:{},global_streak:0,last_active_date:null,detox_streak:0,detox_last_checkin:null,taskSortMode:'time',taskFilter:'all',taskCatFilter:'',avoidance_log:[],fail_log:[],discipline_debt:0,debrief_log:[],morning_intentions:[],win_log:[],weekly_reviews:[],sleep_log:[]};
 
 let S=clone(DEFAULT),synced=false,hist=[],tab='today',bTab='l',bm='m',tlOpen=false,dkT;
@@ -294,7 +294,7 @@ wgoal(){const p=S.profile;sheet('Weight goal',lab('Goal weight (kg)',inp('f1',p.
 wgsave(){const g=parseFloat($('f1').value),h=parseFloat($('f2').value);S.profile.goalWeight=g>0?g:0;S.profile.height=h>0?h:0;close();commit()},
 prof(){const p=S.profile;sheet('Settings',lab('Name',inp('f1',p.username))+lab('Mission',inp('f2',p.mission||''))+lab('Avatar image URL',inp('f3',p.avatarUrl||'','placeholder="https://"'))+`<div class="btns" style="justify-content:flex-start"><button class="btn" data-a="sync">Sync now</button><button class="btn d" data-a="reset">Factory reset</button></div>`,'profsave')},
 profsave(){const n=$('f1').value.trim().toUpperCase();if(n)S.profile.username=n;S.profile.mission=$('f2').value.trim();S.profile.avatarUrl=$('f3').value.trim();close();commit()},
-reset(){if(!confirm('Erase all data except your budget? This cannot be undone.'))return;const r=clone(DEFAULT);r.budget=S.budget;set(ref(db,PATH),r).then(()=>location.reload()).catch(()=>toast('Reset failed'))}
+reset(){if(!confirm('Factory reset? This erases all tasks, schedule blocks, workouts and weight entries. Only your budget logs are kept. This cannot be undone.'))return;const r=clone(DEFAULT);r.budget=S.budget;set(ref(db,PATH),r).then(()=>location.reload()).catch(()=>toast('Reset failed'))}
 };
 const C={mission(v){S.profile.mission=v.trim();save();toast('Mission saved')},weight(v){const n=parseFloat(v);if(n>0){S.profile.currentWeight=n;commit()}}};
 
