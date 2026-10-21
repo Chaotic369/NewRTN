@@ -55,10 +55,11 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 dialog label{display:block;font-size:13px;color:var(--tm);margin:12px 0 4px}dialog .ckl{display:flex;gap:8px;align-items:center;margin-top:14px;color:var(--tx)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #to{position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top));background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9;max-width:90vw}#to.on{opacity:1}
-.dock{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:var(--w);bottom:calc(57px + env(safe-area-inset-bottom));z-index:4;background:var(--bg);padding:8px 12px}
-.dock .add input{border-radius:24px;min-height:48px}.dock .btn{border-radius:24px;min-width:72px;min-height:48px}
-.dock .chips{flex-wrap:nowrap;overflow-x:auto;margin:0 -12px 8px;padding:0 12px;scrollbar-width:none}.dock .chips::-webkit-scrollbar{display:none}
-.dock .chip{flex:none;min-height:36px;padding:0 14px;font-size:14px;border-radius:18px}
+.dock{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:var(--w);bottom:calc(57px + env(safe-area-inset-bottom));z-index:4;background:linear-gradient(to bottom,transparent,var(--bg) 35%);padding:14px 12px 8px}
+.dock .add{background:var(--s);border-radius:28px;padding:5px;gap:6px;align-items:center;box-shadow:0 4px 18px rgba(0,0,0,.12)}
+.dock .add input{background:transparent;border-radius:24px;min-height:44px;padding:0 16px}.dock .btn{border-radius:22px;min-width:64px;min-height:44px}
+.dock .chips{flex-wrap:nowrap;overflow-x:auto;margin:0 -12px 8px;padding:2px 12px 4px;scrollbar-width:none}.dock .chips::-webkit-scrollbar{display:none}
+.dock .chip{flex:none;min-height:36px;padding:0 14px;font-size:14px;border-radius:18px;background:var(--s);box-shadow:0 1px 4px rgba(0,0,0,.1)}
 body.kb nav{display:none}body.kb .dock{bottom:var(--kb,0px)}
 dialog::before{content:"";display:block;width:36px;height:4px;border-radius:4px;background:var(--bd);margin:-6px auto 14px}
 dialog[open]{animation:up .22s ease}@keyframes up{from{transform:translateY(28px);opacity:0}}
