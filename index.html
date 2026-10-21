@@ -51,6 +51,11 @@ button{cursor:pointer}button:focus-visible{outline:none}
 .tp .ic{min-height:34px;min-width:34px;font-size:15px}
 .tile{background:var(--s);border-radius:14px;padding:12px}.tile b{display:block;font-size:20px;letter-spacing:-.02em}.tile span{font-size:13px;color:var(--tm)}.tile.w{grid-column:1/-1}
 .pos{color:var(--ok)}.neg{color:var(--er)}.grp{margin-top:12px}
+.wch{width:100%;height:auto;display:block;margin:4px 0 8px}
+.wl{fill:none;stroke:var(--ac);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.wd{fill:var(--ac)}
+.wg{stroke:var(--tm);stroke-width:1;stroke-dasharray:4 4}
+.wt{fill:var(--tm);font-size:10px}
 .pb{height:4px;border-radius:4px;background:var(--s2);margin:4px 0 8px;overflow:hidden}.pb i{display:block;height:100%;background:var(--ac)}
 .seg{display:flex;background:var(--s2);border-radius:10px;padding:3px}.seg button{flex:1;border:0;background:none;padding:7px;border-radius:8px;color:var(--tm)}.seg .on{background:var(--s);color:var(--tx);font-weight:600}
 .av{width:48px;height:48px;border-radius:50%;background:var(--s2);display:grid;place-items:center;font-weight:700;overflow:hidden}.av img{width:100%;height:100%;object-fit:cover}
@@ -109,7 +114,7 @@ exercises:[['Wall Push-Ups','CHEST',12],['Dead Bugs','CORE',10],['Glute Bridges'
 neural:{decks:[],subjects:[]},heatmap:{},global_streak:0,last_active_date:null,detox_streak:0,detox_last_checkin:null,taskSortMode:'time',taskFilter:'all',taskCatFilter:'',avoidance_log:[],fail_log:[],discipline_debt:0,debrief_log:[],morning_intentions:[],win_log:[],weekly_reviews:[],sleep_log:[]};
 
 let S=clone(DEFAULT),synced=false,hist=[],tab='today',bTab='l',bm='m',tlOpen=false,dkT;
-const arr=['tasks','budget','workout_log','exercises','timeline','win_log','morning_intentions','fail_log','avoidance_log','debrief_log','weekly_reviews','sleep_log'];
+const arr=['tasks','budget','workout_log','exercises','timeline','win_log','morning_intentions','fail_log','avoidance_log','debrief_log','weekly_reviews','sleep_log','weight_log'];
 function fix(){const D=clone(DEFAULT);for(const k in D)if(S[k]==null)S[k]=D[k];S.profile={...D.profile,...S.profile};S.settings={...D.settings,...S.settings};
 arr.forEach(k=>{if(!Array.isArray(S[k]))S[k]=Object.values(S[k]||{})});
 for(const k in S.timeline_completed)if(!Array.isArray(S.timeline_completed[k]))S.timeline_completed[k]=Object.values(S.timeline_completed[k]||{});
@@ -203,12 +208,26 @@ return `<section class="card"><div class="row" style="padding-top:0"><div class=
 +`<section class="tiles" style="grid-template-columns:1fr 1fr"><div class="tile"><b>${td}<span> / ${g}</span></b><span>XP today</span></div><div class="tile"><b>${S.global_streak||0}</b><span>Day streak</span></div><div class="tile"><b>${S.detox_streak||0}</b><span>Detox streak</span></div><div class="tile"><b>${tot?Math.round(dn/tot*100):0}%</b><span>Completion</span></div><div class="tile"><b>${dn}</b><span>Tasks done</span></div><div class="tile"><b>${S.workout_log.length}</b><span>Workouts</span></div></section>`
 +(S.discipline_debt>0?`<section class="card"><div class="row" style="padding:0"><div class="g" style="cursor:default"><div>Discipline debt: ${S.discipline_debt}</div><div class="sub">Critical tasks you failed or avoided</div></div><button class="btn" data-a="debt">Clear it</button></div></section>`:'')
 +`<section class="card"><h2>Activity · last 12 weeks</h2>${heat()}</section>`
-+`<section class="card"><h2>Weight target</h2><div class="add"><input type="number" step="0.1" value="${w}" placeholder="Current kg" data-ch="weight"><span class="chip" style="align-self:center">of 55 kg</span></div><div class="pb" style="margin-top:10px"><i style="width:${wp}%"></i></div></section>`}
++wtui()}
 };
 
 const DK={today:()=>`<div class="tp" id="tp" hidden></div><div class="add"><div class="hl"><div class="th" id="th" aria-hidden="true"></div><input id="ti" placeholder="Add a task… e.g. Study 8-10pm" data-enter="addtask" enterkeyhint="send" autocomplete="off"></div><button class="btn p" data-a="addtask">Add</button></div>`,
 budget:()=>`<div class="chips">${[['v','Veg'],['f','Fruit'],['m','Milk'],['g','Gas'],['ff','Fast food'],['r','Ration'],['gt','Given to'],['tf','Taken from']].map(([k,n])=>`<button class="chip" data-a="cat" data-i="${k}">${n}</button>`).join('')}</div><div class="add"><input id="bi" placeholder="Amount and item, e.g. 120 v cash" data-enter="bud" enterkeyhint="send" autocomplete="off" autocapitalize="none"><button class="btn p" data-a="bud">Add</button></div>`};
 function render(){$('v').innerHTML=V[tab]();if(dkT!==tab){dkT=tab;$('dk').innerHTML=DK[tab]?DK[tab]():'';$('dk').hidden=!DK[tab];document.body.classList.toggle('dk',!!DK[tab])}document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab))}
+
+/* Weight tracking */
+function wsync(){const L=S.weight_log.slice().sort((a,b)=>a.date-b.date);if(L.length)S.profile.currentWeight=L[L.length-1].kg}
+function wtui(){const p=S.profile,L=S.weight_log.slice().sort((a,b)=>a.date-b.date),g=+p.goalWeight||0,h=+p.height||0,f=n=>String(Math.round(n*10)/10),sg=n=>(n>0?'+':'')+f(n);
+const cur=L.length?L[L.length-1].kg:(+p.currentWeight||0),st=L.length?L[0].kg:cur;
+if(!cur)return `<section class="card"><h2>Weight <button class="lnk" data-a="wgoal">Goal</button></h2><p class="sub">Log your weight to see your trend, change and progress to your goal.</p><button class="btn p" data-a="wlog" style="width:100%;margin-top:10px">Log weight</button></section>`;
+const base=L.filter(x=>x.date<=Date.now()-7*864e5).pop()||L[0],d7=base?cur-base.kg:0,dg=g?cur-g:null,pr=g&&st!==g?Math.max(0,Math.min(100,(st-cur)/(st-g)*100)):0;
+let ch='';const pts=L.slice(-30);
+if(pts.length>1){const vs=pts.map(x=>x.kg);if(g)vs.push(g);const mn=Math.min(...vs)-.5,mx=Math.max(...vs)+.5,X=i=>12+i*276/(pts.length-1),Y=v=>12+(mx-v)/(mx-mn)*86;
+ch=`<svg class="wch" viewBox="0 0 300 110" role="img" aria-label="Weight trend">${g?`<line class="wg" x1="12" x2="288" y1="${Y(g)}" y2="${Y(g)}"/><text class="wt" x="288" y="${Y(g)-4}" text-anchor="end">goal ${f(g)}</text>`:''}<polyline class="wl" points="${pts.map((x,i)=>X(i)+','+Y(x.kg)).join(' ')}"/>${pts.map((x,i)=>`<circle class="wd" cx="${X(i)}" cy="${Y(x.kg)}" r="3"/>`).join('')}</svg>`}
+const tiles=`<div class="tiles" style="grid-template-columns:1fr 1fr;margin-bottom:10px"><div class="tile"><b>${f(cur)}<span> kg</span></b><span>Current</span></div><div class="tile"><b>${sg(d7)}<span> kg</span></b><span>Last 7 days</span></div><div class="tile"><b>${dg===null?'—':f(Math.abs(dg))+'<span> kg</span>'}</b><span>${dg===null?'No goal set':dg>0?'To lose':dg<0?'To gain':'At goal'}</span></div><div class="tile"><b>${h?f(cur/((h/100)**2)):L.length}</b><span>${h?'BMI':'Entries'}</span></div></div>`;
+const bar=g?`<div class="pb"><i style="width:${pr}%"></i></div><div class="sub">Start ${f(st)} kg · Goal ${f(g)} kg · ${Math.round(pr)}%</div>`:`<p class="sub">Set a goal to track your progress.</p>`;
+const rows=L.slice(-6).reverse().map(x=>{const pv=L[L.indexOf(x)-1];return `<div class="row"><div class="g" data-a="wedit" data-i="${esc(x.id)}"><div>${f(x.kg)} kg${pv?' <span class="sub">'+sg(x.kg-pv.kg)+'</span>':''}</div><div class="sub">${fd(x.date)}${x.note?' · '+esc(x.note):''}</div></div></div>`}).join('');
+return `<section class="card"><h2>Weight <button class="lnk" data-a="wgoal">Goal</button></h2>${tiles}${ch}${bar}<button class="btn p" data-a="wlog" style="width:100%;margin-top:12px">Log weight</button>${rows?`<h2 style="margin-top:14px">Recent weigh-ins</h2>${rows}`:''}</section>`}
 
 /* Sheets */
 const lab=(t,h)=>`<label>${t}</label>${h}`,inp=(id,v='',x='')=>`<input id="${id}" value="${esc(v)}" ${x}>`,close=()=>$('sh').close();
@@ -264,6 +283,14 @@ if(amount<=0)return toast('Enter a valid amount');H();S.budget.push({id:'b_'+Dat
 cat(c){const i=$('bi'),keys=Object.keys(catMap),p=i.value.trim().split(/\s+/).filter(Boolean).filter(x=>!keys.includes(x.toLowerCase()));p.push(c);i.value=p.join(' ');i.focus()},
 delb(id){close();H();S.budget=S.budget.filter(b=>b.id!==id);commit()},
 bt(k){bTab=k;render()},bm(k){bm=k;render()},
+wlog(){const L=S.weight_log.slice().sort((a,b)=>a.date-b.date),last=L.length?L[L.length-1].kg:(S.profile.currentWeight||'');sheet('Log weight',lab('Weight (kg)',inp('f1',last,'type="number" step="0.1" inputmode="decimal"'))+lab('Date',inp('f2',dk(new Date()),'type="date"'))+lab('Note (optional)',inp('f3')),'wsave')},
+wedit(id){const e=S.weight_log.find(x=>x.id===id);if(!e)return;sheet('Edit weight',lab('Weight (kg)',inp('f1',e.kg,'type="number" step="0.1" inputmode="decimal"'))+lab('Date',inp('f2',dk(new Date(e.date)),'type="date"'))+lab('Note (optional)',inp('f3',e.note||'')),'wsave',id,'wdel')},
+wsave(id){const kg=parseFloat($('f1').value);if(!(kg>0&&kg<500))return toast('Enter a valid weight');const dt=new Date($('f2').value+'T12:00:00'),date=isNaN(dt)?Date.now():dt.getTime(),note=$('f3').value.trim();H();
+const e=id?S.weight_log.find(x=>x.id===id):S.weight_log.find(x=>dk(new Date(x.date))===dk(new Date(date)));
+if(e)Object.assign(e,{kg,date,note});else S.weight_log.push({id:'w'+Date.now(),date,kg,note});wsync();close();commit();toast('Weight saved')},
+wdel(id){H();S.weight_log=S.weight_log.filter(x=>x.id!==id);wsync();close();commit()},
+wgoal(){const p=S.profile;sheet('Weight goal',lab('Goal weight (kg)',inp('f1',p.goalWeight||'','type="number" step="0.1" inputmode="decimal"'))+lab('Height (cm, optional, for BMI)',inp('f2',p.height||'','type="number" inputmode="numeric"')),'wgsave')},
+wgsave(){const g=parseFloat($('f1').value),h=parseFloat($('f2').value);S.profile.goalWeight=g>0?g:0;S.profile.height=h>0?h:0;close();commit()},
 prof(){const p=S.profile;sheet('Settings',lab('Name',inp('f1',p.username))+lab('Mission',inp('f2',p.mission||''))+lab('Avatar image URL',inp('f3',p.avatarUrl||'','placeholder="https://"'))+`<div class="btns" style="justify-content:flex-start"><button class="btn" data-a="sync">Sync now</button><button class="btn d" data-a="reset">Reset data</button></div>`,'profsave')},
 profsave(){const n=$('f1').value.trim().toUpperCase();if(n)S.profile.username=n;S.profile.mission=$('f2').value.trim();S.profile.avatarUrl=$('f3').value.trim();close();commit()},
 reset(){if(!confirm('Erase all data except your budget? This cannot be undone.'))return;const r=clone(DEFAULT);r.budget=S.budget;set(ref(db,PATH),r).then(()=>location.reload()).catch(()=>toast('Reset failed'))}
