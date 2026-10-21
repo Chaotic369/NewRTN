@@ -153,7 +153,7 @@ function sync(){get(ref(db,PATH)).then(s=>{synced=true;if(s.exists()){const c=s.
 
 function streaks(){const t=dk(new Date()),T=new Date();T.setHours(0,0,0,0);
 if(!S.last_active_date){S.last_active_date=t;S.global_streak=0}else if(S.last_active_date!==t){const L=new Date(S.last_active_date);L.setHours(0,0,0,0);const d=Math.round((T-L)/864e5);if(d===1)S.global_streak=(S.global_streak||0)+1;else if(d>1)S.global_streak=1;S.last_active_date=t}
-if(S.detox_last_checkin!==t){if(S.detox_last_checkin){const y=new Date();y.setDate(y.getDate()-1);if(S.detox_last_checkin===dk(y)&&S.detox_last_tax_date!==t)S.detox_streak=(S.detox_streak||0)+1}S.detox_last_checkin=t}
+
 save()}
 
 let tt;function toast(m){const e=$('to');e.textContent=m;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),2200)}
@@ -213,7 +213,7 @@ return act+nowc+SCH+`<section class="card"><h2>Tasks</h2>${pend.map(row).join(''
 +`<section class="card"><h2>Today's priorities <button class="lnk" data-a="intent">${mi?'Edit':'Set'}</button></h2>${mi?[mi.p1,mi.p2,mi.p3].filter(Boolean).map(p=>`<div style="margin-top:4px">${esc(p)}${p===mi.critical?' <span class="chip">must not fail</span>':''}</div>`).join(''):'<p class="sub">Pick up to three things that must get done today.</p>'}</section>`
 
 +cki()+`<section class="card"><h2>Wins</h2><div class="add"><input id="wi" placeholder="Log a win" data-enter="win" autocomplete="off"><button class="btn" data-a="win">Log</button></div>${wins.slice(-5).reverse().map(w=>`<div style="margin-top:8px">${esc(w.text)}</div>`).join('')}</section>`
-+`<section class="card"><div class="row" style="padding:0"><div class="g" style="cursor:default"><div>Slipped on short-form content?</div><div class="sub">Resets your detox streak</div></div><button class="btn" data-a="tax">Pay the tax</button></div></section>`},
+},
 
 train(){return `<section class="tiles" style="grid-template-columns:1fr 1fr"><div class="tile"><b>${S.workout_log.length}</b><span>Sessions</span></div><div class="tile"><b>${pstreak()}</b><span>Day streak</span></div></section>`
 +`<button class="btn p" data-a="rep">Repeat yesterday's workout</button>`
@@ -228,7 +228,7 @@ return `<section class="tiles"><div class="tile w"><b class="${b.t<0?'neg':''}">
 
 stats(){const p=S.profile,tot=S.tasks.length,dn=S.tasks.filter(x=>x.completed).length,w=p.currentWeight||'',wp=w?Math.min(100,Math.max(0,(w-45)/10*100)):0;
 return `<section class="card"><div class="row" style="padding-top:0"><div class="av">${p.avatarUrl?`<img src="${esc(p.avatarUrl)}" alt="">`:esc((p.username||'OP').slice(0,2))}</div><div class="g" style="cursor:default"><b>${esc(p.username)}</b></div><button class="btn" data-a="prof">Settings</button></div><input value="${esc(p.mission||'')}" placeholder="Your mission" data-ch="mission" style="margin-top:12px"></section>`
-+`<section class="tiles" style="grid-template-columns:1fr 1fr"><div class="tile"><b>${dstreak()}</b><span>Streak (70%+ days)</span></div><div class="tile"><b>${S.detox_streak||0}</b><span>Detox streak</span></div><div class="tile"><b>${tot?Math.round(dn/tot*100):0}%</b><span>Completion</span></div><div class="tile"><b>${dn}</b><span>Tasks done</span></div><div class="tile w"><b>${S.workout_log.length}</b><span>Workouts</span></div></section>`
++`<section class="tiles" style="grid-template-columns:1fr 1fr"><div class="tile"><b>${dstreak()}</b><span>Streak (70%+ days)</span></div><div class="tile"><b>${tot?Math.round(dn/tot*100):0}%</b><span>Completion</span></div><div class="tile"><b>${dn}</b><span>Tasks done</span></div><div class="tile"><b>${S.workout_log.length}</b><span>Workouts</span></div></section>`
 +(S.discipline_debt>0?`<section class="card"><div class="row" style="padding:0"><div class="g" style="cursor:default"><div>Discipline debt: ${S.discipline_debt}</div><div class="sub">Critical tasks you failed or avoided</div></div><button class="btn" data-a="debt">Clear it</button></div></section>`:'')
 +insui()
 +wtui()}
@@ -314,7 +314,7 @@ tldel(id){H();S.timeline=S.timeline.filter(x=>x.id!==id);close();commit()},
 intent(){const m=S.morning_intentions.find(x=>x.date===dk(new Date()))||{};sheet('Today’s priorities',lab('Priority 1',inp('f1',m.p1))+lab('Priority 2',inp('f2',m.p2))+lab('Priority 3',inp('f3',m.p3))+lab('Must not fail (copy one from above)',inp('f4',m.critical)),'intentsave')},
 intentsave(){const p1=$('f1').value.trim(),p2=$('f2').value.trim(),p3=$('f3').value.trim(),critical=$('f4').value.trim();if(!p1&&!p2&&!p3)return close();H();const t=dk(new Date()),i=S.morning_intentions.findIndex(x=>x.date===t),e={date:t,p1,p2,p3,critical,timestamp:Date.now()};if(i>=0)S.morning_intentions[i]=e;else S.morning_intentions.push(e);close();commit()},
 win(){const t=$('wi').value.trim();if(!t)return;H();S.win_log.push({text:t,timestamp:Date.now()});commit()},
-tax(){if(!confirm('Pay the dopamine tax? It resets your detox streak.'))return;H();S.detox_streak=0;S.detox_last_tax_date=dk(new Date());S.tasks.push(mk({title:'Tax: 40 push-ups or 20 min in a blank editor',category:'DISCIPLINE',priority:'critical'}));commit()},
+
 debt(){const d=S.discipline_debt;if(!(d>0))return;H();S.tasks.push(mk({title:`Debt clearance: ${d} critical task${d>1?'s':''} (25 push-ups or 20 min deep work each)`,category:'DISCIPLINE',priority:'critical'}));S.discipline_debt=0;commit()},
 ex(id){const e=S.exercises.find(x=>x.id===id)||{};sheet(e.id?'Edit exercise':'New exercise',lab('Name',inp('f1',e.name))+lab('Muscle group',inp('f2',e.group))+`<div class="two"><div>${lab('Target sets',inp('f3',e.targetSets||3,'type="number"'))}</div><div>${lab('Reps or seconds',inp('f4',e.targetReps||10,'type="number"'))}</div></div><label class="ckl"><input id="f5" type="checkbox"${e.isHold?' checked':''}> Timed hold (seconds)</label>`,'exsave',e.id,e.id&&'exdel')},
 exsave(id){const name=$('f1').value.trim();if(!name)return toast('Add a name');H();const o={name,group:$('f2').value.trim().toUpperCase(),targetSets:+$('f3').value||3,targetReps:+$('f4').value||10,isHold:$('f5').checked};if(id)Object.assign(S.exercises.find(x=>x.id===id),o);else S.exercises.push({id:'e'+Date.now(),prSets:0,prReps:0,...o});close();commit()},
