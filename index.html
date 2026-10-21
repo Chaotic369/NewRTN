@@ -109,10 +109,10 @@ const dk=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${Stri
 const mins=t=>{const[a,b]=String(t).split(':').map(Number);return(a||0)*60+(b||0)};
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],R=n=>(n<0?'-₹':'₹')+Math.abs(n);
 const fd=t=>new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'}),cap=s=>s?s[0]+s.slice(1).toLowerCase():'';
-const mk=o=>({id:Date.now()+'',xp:25,duration:25,time:null,category:null,priority:'normal',repeat:null,completed:false,failed:false,completedAt:null,createdAt:Date.now(),notes:'',...o});
+const mk=o=>({id:Date.now()+'',duration:25,time:null,category:null,priority:'normal',repeat:null,completed:false,failed:false,completedAt:null,createdAt:Date.now(),notes:'',...o});
 
 const TL=[['07:00','System start: wake up [DISCIPLINE]'],['07:10','Maintenance: bath / brush [HEALTH]'],['07:30','Fuel: breakfast [HEALTH]'],['08:00','Neural compile: deep work [LOGIC]'],['11:00','Cache clear: stretch [HEALTH]'],['11:10','Fuel: mid-day nutrition [HEALTH]'],['12:10','Deployment: college [LOGIC]'],['17:20','Return to base [DISCIPLINE]'],['17:30','Fuel recharge: eat food [HEALTH]'],['18:00','Neural compile: study / code [LOGIC]'],['20:00','Fuel: evening nutrition [HEALTH]'],['20:30','Neural compile: final study block [MEMORY]'],['21:30','Physical protocol: exercise [STRENGTH]'],['22:10','Decompression: shower [HEALTH]'],['23:00','Night maintenance [DISCIPLINE]'],['23:30','Screen lock: read / plan [FOCUS]'],['00:00','Power down: sleep [HEALTH]']];
-const DEFAULT={profile:{username:'OPERATIVE',level:1,xp:0,rank:'SLAVE',avatarUrl:''},settings:{dailyXPGoal:500},tasks:[],budget:[],
+const DEFAULT={profile:{username:'OPERATIVE',avatarUrl:''},settings:{},tasks:[],budget:[],
 timeline:TL.map(([time,label],i)=>({id:'t'+(i+1),time,label,color:'var(--blue)'})),workout_log:[],timeline_completed:{},timeline_completed_times:{},
 exercises:[['Wall Push-Ups','CHEST',12],['Dead Bugs','CORE',10],['Glute Bridges','GLUTES',15],['Plank Hold','CORE',20,1],['Bodyweight Squats','LEGS',20]].map(([name,group,r,h],i)=>({id:'e'+(i+1),name,group,targetSets:3,targetReps:r,prSets:0,prReps:0,isHold:!!h})),
 neural:{decks:[],subjects:[]},heatmap:{},global_streak:0,last_active_date:null,detox_streak:0,detox_last_checkin:null,taskSortMode:'time',taskFilter:'all',taskCatFilter:'',avoidance_log:[],fail_log:[],discipline_debt:0,debrief_log:[],morning_intentions:[],win_log:[],weekly_reviews:[],sleep_log:[]};
@@ -131,7 +131,7 @@ function sync(){get(ref(db,PATH)).then(s=>{synced=true;if(s.exists()){const c=s.
 
 
 
-function gain(n,src){if(!n)return;S.profile.xp=Math.max(0,S.profile.xp+n);const t=dk(new Date());S.heatmap[t]=Math.max(0,(S.heatmap[t]||0)+n);toast(`${n>0?'+':''}${n} XP · ${src}`)}
+
 function streaks(){const t=dk(new Date()),T=new Date();T.setHours(0,0,0,0);
 if(!S.last_active_date){S.last_active_date=t;S.global_streak=0}else if(S.last_active_date!==t){const L=new Date(S.last_active_date);L.setHours(0,0,0,0);const d=Math.round((T-L)/864e5);if(d===1)S.global_streak=(S.global_streak||0)+1;else if(d>1)S.global_streak=1;S.last_active_date=t}
 if(S.detox_last_checkin!==t){if(S.detox_last_checkin){const y=new Date();y.setDate(y.getDate()-1);if(S.detox_last_checkin===dk(y)&&S.detox_last_tax_date!==t)S.detox_streak=(S.detox_streak||0)+1}S.detox_last_checkin=t}
@@ -164,13 +164,12 @@ if(h){h.innerHTML=hm?esc(v.slice(0,hm.i))+'<mark>'+esc(hm.text)+'</mark>'+esc(v.
 if(p){const s=!!m&&m.ask&&m.text!==tdis;p.hidden=!s;if(s)p.innerHTML=`<span>${esc(m.text)} · ${m.bare?'is this a time?':'AM or PM?'}</span><button class="btn" data-a="tap" data-i="am">AM</button><button class="btn" data-a="tap" data-i="pm">PM</button><button class="ic" data-a="tano" aria-label="Not a time">✕</button>`}}
 
 /* Tasks: same quick-add syntax as before */
-function parse(raw){let t=raw,xp=25,time=null,duration=25,category=null,priority='normal',repeat=null,m;
-if(m=t.match(/(\d+)\s*xp/i)){xp=+m[1];t=t.replace(m[0],'')}
+function parse(raw){let t=raw,time=null,duration=25,category=null,priority='normal',repeat=null,m;
 {const tm=tparse(t);if(tm&&!tm.ask){time=tm.time;if(tm.dur)duration=tm.dur;t=t.slice(0,tm.i)+t.slice(tm.i+tm.text.length)}}
 if(m=t.match(/#([A-Za-z]+)/)){category=m[1].toUpperCase();t=t.replace(m[0],'')}
 if(/!critical/i.test(t)){priority='critical';t=t.replace(/!critical/i,'')}else if(/!high/i.test(t)){priority='high';t=t.replace(/!high/i,'')}
 if(m=t.match(/repeat:(daily|weekly)/i)){repeat=m[1].toLowerCase();t=t.replace(m[0],'')}
-const title=t.replace(/\s+/g,' ').trim();return title?mk({title,xp,time,duration,category,priority,repeat}):null}
+const title=t.replace(/\s+/g,' ').trim();return title?mk({title,time,duration,category,priority,repeat}):null}
 
 /* Budget: same shorthand as before */
 const catMap={v:'Vegetable',vegetable:'Vegetable',fr:'Fruit',fruit:'Fruit',f:'Fruit',m:'Milk',milk:'Milk',g:'Gas',gas:'Gas',ff:'Fast food','fast food':'Fast food',r:'Food ration','food ration':'Food ration',gt:'Given to','given to':'Given to',tf:'Taken from','taken from':'Taken from'};
@@ -179,7 +178,7 @@ function ana(mode){const now=new Date(),g={};S.budget.filter(b=>b.category.toLow
 return Object.keys(g).sort().reverse().map(k=>{const c=g[k],t=Object.values(c).reduce((a,b)=>a+b,0);return `<section class="card"><div class="row" style="padding-top:0"><b class="g">${k}</b><b class="neg">-₹${t}</b></div>${Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div class="sub" style="display:flex;justify-content:space-between"><span>${esc(n)}</span><span>₹${v} · ${Math.round(v/t*100)}%</span></div><div class="pb"><i style="width:${Math.round(v/t*100)}%"></i></div>`).join('')}</section>`}).join('')||'<p class="sub">No spending in this range yet.</p>'}
 
 function pstreak(){const s=new Set(S.workout_log.map(w=>dk(new Date(w.date))));const d=new Date();let c=0;if(!s.has(dk(d)))d.setDate(d.getDate()-1);while(s.has(dk(d))){c++;d.setDate(d.getDate()-1)}return c}
-function heat(){const g=S.settings.dailyXPGoal||500,n=new Date(),s=new Date(n.getFullYear(),n.getMonth(),n.getDate()-(77+n.getDay()));let h='';for(let i=0;i<84;i++){const d=new Date(s.getFullYear(),s.getMonth(),s.getDate()+i);if(d>n){h+='<i></i>';continue}const v=S.heatmap[dk(d)]||0;h+=`<i style="--l:${v>0?Math.max(.18,Math.min(1,v/g)).toFixed(2):0}" title="${dk(d)}: ${v} XP"></i>`}return `<div class="heat">${h}</div>`}
+
 
 /* Screens */
 const V={
@@ -187,15 +186,15 @@ today(){const t=dk(new Date()),n=new Date(),nm=n.getHours()*60+n.getMinutes(),a=
 const pend=S.tasks.filter(x=>!x.completed&&!x.failed).sort((x,y)=>(x.time?mins(x.time):1e4)-(y.time?mins(y.time):1e4)||(P[x.priority]??2)-(P[y.priority]??2)),fin=S.tasks.filter(x=>x.completed||x.failed);
 const mi=S.morning_intentions.find(m=>m.date===t),wins=S.win_log.filter(w=>dk(new Date(w.timestamp))===t),dl=S.timeline_completed[t]||[];let cur=-1;S.timeline.forEach((x,i)=>{if(mins(x.time)<=nm)cur=i});
 let act='';if(a){const s=a.isTimeline?S.timeline.find(x=>x.id===a.id):S.tasks.find(x=>x.id===a.id);act=`<section class="card act"><h2>In progress</h2><div class="big" id="tm">…</div><p>${esc(s?(s.title||s.label):'Task')}</p><div class="btns" style="justify-content:flex-start"><button class="btn p" data-a="adone">Done</button><button class="btn" data-a="amin">+1 min</button><button class="btn" data-a="askip">Skip</button><button class="btn d" data-a="afail">Fail</button></div></section>`}
-const row=x=>`<div class="row${x.failed?' fl':''}"><button class="ck${x.completed?' on':''}" data-a="done" data-i="${esc(x.id)}" aria-label="Complete">${x.completed?'✓':''}</button><div class="g" data-a="task" data-i="${esc(x.id)}"><div class="${x.completed||x.failed?'mu':''}">${esc(x.title)}</div><div class="sub">${esc([x.time,x.category,x.priority!=='normal'?x.priority:'',x.repeat,x.failed?'failed':''].filter(Boolean).join(' · '))}</div></div><span class="chip">${x.xp} XP</span>${x.completed||x.failed?'':`<button class="ic" data-a="start" data-i="${esc(x.id)}" aria-label="Start">▶</button>`}</div>`;
+const row=x=>`<div class="row${x.failed?' fl':''}"><button class="ck${x.completed?' on':''}" data-a="done" data-i="${esc(x.id)}" aria-label="Complete">${x.completed?'✓':''}</button><div class="g" data-a="task" data-i="${esc(x.id)}"><div class="${x.completed||x.failed?'mu':''}">${esc(x.title)}</div><div class="sub">${esc([x.time,x.category,x.priority!=='normal'?x.priority:'',x.repeat,x.failed?'failed':''].filter(Boolean).join(' · '))}</div></div>${x.completed||x.failed?'':`<button class="ic" data-a="start" data-i="${esc(x.id)}" aria-label="Start">▶</button>`}</div>`;
 let nowc='';if(!a){const x=S.timeline[cur];if(x){const nx=S.timeline[(cur+1)%S.timeline.length],dn=dl.includes(x.id),pt=pend[0];nowc=`<section class="card act"><h2>Now · ${esc(x.time)}</h2><h3>${esc(x.label.replace(/\s*\[[^\]]*\]\s*$/,''))}</h3><p class="sub">${nx?'Next: '+esc(nx.time)+' · '+esc(nx.label.replace(/\s*\[[^\]]*\]\s*$/,'')):''}</p>${pt?`<p class="sub">Next task: ${esc(pt.title)}${pt.time?' · '+esc(pt.time):''}</p>`:''}<div class="btns" style="justify-content:flex-start"><button class="btn p" data-a="tl" data-i="${esc(x.id)}">${dn?'Undo done':'Done'}</button><button class="btn" data-a="tlstart" data-i="${esc(x.id)}">Start timer</button></div></section>`}}
 const SCH=`<section class="card" id="tld"><h2>Daily schedule <span class="sub">${dl.length} of ${S.timeline.length} done</span></h2>${S.timeline.map((x,i)=>`<div class="row${i===cur?' now':''}"><button class="ck${dl.includes(x.id)?' on':''}" data-a="tl" data-i="${esc(x.id)}" aria-label="Mark done">${dl.includes(x.id)?'✓':''}</button><div class="g" data-a="tledit" data-i="${esc(x.id)}"><div>${esc(x.label.replace(/\s*\[[^\]]*\]\s*$/,''))}</div><div class="sub">${esc(x.time)}</div></div></div>`).join('')}<button class="btn" data-a="tledit" style="margin-top:10px">Add block</button></section>`;
-return act+nowc+SCH+`<section class="card"><h2>Tasks</h2>${pend.map(row).join('')||'<p class="sub">Nothing pending. Type below to add one, e.g. “Study 8pm #logic !high 40xp”.</p>'}</section>`
+return act+nowc+SCH+`<section class="card"><h2>Tasks</h2>${pend.map(row).join('')||'<p class="sub">Nothing pending. Type below to add one, e.g. “Study 8pm #logic !high”.</p>'}</section>`
 +(fin.length?`<section class="card"><h2>Finished <button class="lnk" data-a="clear">Clear all</button></h2>${fin.map(row).join('')}</section>`:'')
-+`<section class="card"><h2>Today's priorities <button class="lnk" data-a="intent">${mi?'Edit':'Set'}</button></h2>${mi?[mi.p1,mi.p2,mi.p3].filter(Boolean).map(p=>`<div style="margin-top:4px">${esc(p)}${p===mi.critical?' <span class="chip">must not fail</span>':''}</div>`).join(''):'<p class="sub">Pick up to three things that must get done today (+5 XP).</p>'}</section>`
++`<section class="card"><h2>Today's priorities <button class="lnk" data-a="intent">${mi?'Edit':'Set'}</button></h2>${mi?[mi.p1,mi.p2,mi.p3].filter(Boolean).map(p=>`<div style="margin-top:4px">${esc(p)}${p===mi.critical?' <span class="chip">must not fail</span>':''}</div>`).join(''):'<p class="sub">Pick up to three things that must get done today.</p>'}</section>`
 
-+`<section class="card"><h2>Wins</h2><div class="add"><input id="wi" placeholder="Log a win (+5 XP)" data-enter="win" autocomplete="off"><button class="btn" data-a="win">Log</button></div>${wins.slice(-5).reverse().map(w=>`<div style="margin-top:8px">${esc(w.text)}</div>`).join('')}</section>`
-+`<section class="card"><div class="row" style="padding:0"><div class="g" style="cursor:default"><div>Slipped on short-form content?</div><div class="sub">Costs 50 XP and resets your detox streak</div></div><button class="btn" data-a="tax">Pay the tax</button></div></section>`},
++`<section class="card"><h2>Wins</h2><div class="add"><input id="wi" placeholder="Log a win" data-enter="win" autocomplete="off"><button class="btn" data-a="win">Log</button></div>${wins.slice(-5).reverse().map(w=>`<div style="margin-top:8px">${esc(w.text)}</div>`).join('')}</section>`
++`<section class="card"><div class="row" style="padding:0"><div class="g" style="cursor:default"><div>Slipped on short-form content?</div><div class="sub">Resets your detox streak</div></div><button class="btn" data-a="tax">Pay the tax</button></div></section>`},
 
 train(){return `<section class="tiles" style="grid-template-columns:1fr 1fr"><div class="tile"><b>${S.workout_log.length}</b><span>Sessions</span></div><div class="tile"><b>${pstreak()}</b><span>Day streak</span></div></section>`
 +`<section class="card"><h2>Exercises <button class="lnk" data-a="ex">Add</button></h2>${S.exercises.map(e=>`<div class="row"><div class="g" data-a="ex" data-i="${esc(e.id)}"><div>${esc(e.name)}</div><div class="sub">${esc(e.group||'')} · ${e.targetSets}×${e.targetReps}${e.isHold?' s':''}${e.prSets?` · best ${e.prSets}×${e.prReps}`:''}</div></div><button class="btn" data-a="log" data-i="${esc(e.id)}">Log</button></div>`).join('')||'<p class="sub">No exercises yet. Add one to start tracking.</p>'}</section>`
@@ -207,11 +206,10 @@ return `<section class="tiles"><div class="tile w"><b class="${b.t<0?'neg':''}">
 +`<div class="seg"><button class="${bTab==='l'?'on':''}" data-a="bt" data-i="l">Ledger</button><button class="${bTab==='a'?'on':''}" data-a="bt" data-i="a">Analytics</button></div>`
 +(bTab==='l'?`<section class="card"><h2>${MN[now.getMonth()]} ${now.getFullYear()}</h2>${L||'<p class="sub">No transactions this month. Add one below, e.g. “120 v cash” or “500 gt Ravi”.</p>'}</section>`:`<div class="seg"><button class="${bm==='m'?'on':''}" data-a="bm" data-i="m">Last 6 months</button><button class="${bm==='d'?'on':''}" data-a="bm" data-i="d">Last 30 days</button></div>${ana(bm)}`)},
 
-stats(){const p=S.profile,g=S.settings.dailyXPGoal||500,td=S.heatmap[dk(new Date())]||0,tot=S.tasks.length,dn=S.tasks.filter(x=>x.completed).length,w=p.currentWeight||'',wp=w?Math.min(100,Math.max(0,(w-45)/10*100)):0;
-return `<section class="card"><div class="row" style="padding-top:0"><div class="av">${p.avatarUrl?`<img src="${esc(p.avatarUrl)}" alt="">`:esc((p.username||'OP').slice(0,2))}</div><div class="g" style="cursor:default"><b>${esc(p.username)}</b><div class="sub">${p.xp} XP total</div></div><button class="btn" data-a="prof">Settings</button></div><input value="${esc(p.mission||'')}" placeholder="Your mission" data-ch="mission" style="margin-top:12px"></section>`
-+`<section class="tiles" style="grid-template-columns:1fr 1fr"><div class="tile"><b>${td}<span> / ${g}</span></b><span>XP today</span></div><div class="tile"><b>${S.global_streak||0}</b><span>Day streak</span></div><div class="tile"><b>${S.detox_streak||0}</b><span>Detox streak</span></div><div class="tile"><b>${tot?Math.round(dn/tot*100):0}%</b><span>Completion</span></div><div class="tile"><b>${dn}</b><span>Tasks done</span></div><div class="tile"><b>${S.workout_log.length}</b><span>Workouts</span></div></section>`
+stats(){const p=S.profile,tot=S.tasks.length,dn=S.tasks.filter(x=>x.completed).length,w=p.currentWeight||'',wp=w?Math.min(100,Math.max(0,(w-45)/10*100)):0;
+return `<section class="card"><div class="row" style="padding-top:0"><div class="av">${p.avatarUrl?`<img src="${esc(p.avatarUrl)}" alt="">`:esc((p.username||'OP').slice(0,2))}</div><div class="g" style="cursor:default"><b>${esc(p.username)}</b></div><button class="btn" data-a="prof">Settings</button></div><input value="${esc(p.mission||'')}" placeholder="Your mission" data-ch="mission" style="margin-top:12px"></section>`
++`<section class="tiles" style="grid-template-columns:1fr 1fr"><div class="tile"><b>${S.global_streak||0}</b><span>Day streak</span></div><div class="tile"><b>${S.detox_streak||0}</b><span>Detox streak</span></div><div class="tile"><b>${tot?Math.round(dn/tot*100):0}%</b><span>Completion</span></div><div class="tile"><b>${dn}</b><span>Tasks done</span></div><div class="tile w"><b>${S.workout_log.length}</b><span>Workouts</span></div></section>`
 +(S.discipline_debt>0?`<section class="card"><div class="row" style="padding:0"><div class="g" style="cursor:default"><div>Discipline debt: ${S.discipline_debt}</div><div class="sub">Critical tasks you failed or avoided</div></div><button class="btn" data-a="debt">Clear it</button></div></section>`:'')
-+`<section class="card"><h2>Activity · last 12 weeks</h2>${heat()}</section>`
 +wtui()}
 };
 
@@ -248,38 +246,36 @@ tap(p){const el=$('ti'),m=tparse(el.value);if(!m||!m.ask)return;const e=m.i+m.te
 tano(){const m=tparse($('ti').value);if(m&&m.ask)tdis=m.text;tui();$('ti').focus()},
 done(id){const t=S.tasks.find(x=>x.id===id);if(!t)return;H();
 if(t.failed){t.failed=false;t.completedAt=null;return commit()}
-if(t.completed){if(t._xpAwarded)gain(-t._xpAwarded,'Task reopened');t.completed=false;t.completedAt=null;t._xpAwarded=0;return commit()}
+if(t.completed){t.completed=false;t.completedAt=null;return commit()}
 t.completed=true;t.completedAt=Date.now();if(S.activeTask&&!S.activeTask.isTimeline&&S.activeTask.id===id)S.activeTask=null;
-let n=t.xp;if(t.time){const d=new Date();if(d.getHours()*60+d.getMinutes()>mins(t.time))n=Math.floor(n*.6)}
-t._xpAwarded=n;gain(n,t.title);
-if(t.repeat==='daily'&&!t._repeated){t._repeated=true;S.tasks.push({...t,id:Date.now()+'',completed:false,failed:false,completedAt:null,_xpAwarded:0,_repeated:false,createdAt:Date.now()})}commit()},
+if(t.repeat==='daily'&&!t._repeated){t._repeated=true;S.tasks.push({...t,id:Date.now()+'',completed:false,failed:false,completedAt:null,_repeated:false,createdAt:Date.now()})}commit()},
 deltask(id){close();H();if(S.activeTask&&S.activeTask.id===id)S.activeTask=null;S.tasks=S.tasks.filter(x=>x.id!==id);commit()},
 clear(){H();S.tasks=S.tasks.filter(x=>!x.completed&&!x.failed);commit()},
-task(id){const t=S.tasks.find(x=>x.id===id);if(!t)return;sheet('Task',`<p style="margin:8px 0 4px">${esc(t.title)}</p><p class="sub">${esc([t.time,t.category,t.priority!=='normal'?t.priority:'',t.repeat,t.xp+' XP'].filter(Boolean).join(' · '))}</p>`,t.completed||t.failed?'':'start',id,'deltask','Start timer')},
+task(id){const t=S.tasks.find(x=>x.id===id);if(!t)return;sheet('Task',`<p style="margin:8px 0 4px">${esc(t.title)}</p><p class="sub">${esc([t.time,t.category,t.priority!=='normal'?t.priority:'',t.repeat].filter(Boolean).join(' · '))}</p>`,t.completed||t.failed?'':'start',id,'deltask','Start timer')},
 bitem(id){const b=S.budget.find(x=>x.id===id);if(!b)return;sheet(R(b.amount),`<p style="margin:8px 0 4px">${esc(b.item||b.person||b.category)}</p><p class="sub">${esc(b.category)} · ${esc(b.mode)} · ${fd(b.date)}</p>`,'',id,'delb')},
 start(id){close();const t=S.tasks.find(x=>x.id===id);if(!t||t.completed||t.failed)return;if(S.activeTask)return toast('Finish the current task first');H();S.activeTask={id,isTimeline:false,startTime:Date.now(),addedMins:0,expectedDuration:t.duration||25};commit()},
-adone(){const a=S.activeTask;if(!a)return;H();if(a.isTimeline){const t=dk(new Date()),l=S.timeline_completed[t]=S.timeline_completed[t]||[];if(!l.includes(a.id)){l.push(a.id);gain(15,'Protocol done')}S.activeTask=null;return commit()}S.activeTask=null;A.done(a.id)},
+adone(){const a=S.activeTask;if(!a)return;H();if(a.isTimeline){const t=dk(new Date()),l=S.timeline_completed[t]=S.timeline_completed[t]||[];if(!l.includes(a.id))l.push(a.id);S.activeTask=null;return commit()}S.activeTask=null;A.done(a.id)},
 amin(){if(!S.activeTask)return;H();S.activeTask.addedMins++;commit()},
 askip(){H();S.activeTask=null;commit();toast('Skipped')},
 afail(){const a=S.activeTask;if(!a)return;H();const s=a.isTimeline?S.timeline.find(x=>x.id===a.id):S.tasks.find(x=>x.id===a.id);if(!a.isTimeline&&s){s.failed=true;s.completedAt=Date.now()}if(s&&s.priority==='critical')S.discipline_debt=(S.discipline_debt||0)+1;S.activeTask=null;commit()},
-tl(id){const t=dk(new Date());H();const l=S.timeline_completed[t]=S.timeline_completed[t]||[],i=l.indexOf(id);if(i>=0){l.splice(i,1);gain(-15,'Block reopened')}else{l.push(id);(S.timeline_completed_times[t]=S.timeline_completed_times[t]||{})[id]=Date.now();gain(15,'Block done')}commit()},
+tl(id){const t=dk(new Date());H();const l=S.timeline_completed[t]=S.timeline_completed[t]||[],i=l.indexOf(id);if(i>=0)l.splice(i,1);else{l.push(id);(S.timeline_completed_times[t]=S.timeline_completed_times[t]||{})[id]=Date.now()}commit()},
 tlstart(id){if(S.activeTask)return toast('Finish the current task first');const i=S.timeline.findIndex(x=>x.id===id);if(i<0)return;const nx=S.timeline[(i+1)%S.timeline.length];let d=mins(nx.time)-mins(S.timeline[i].time);if(d<=0)d+=1440;H();S.activeTask={id,isTimeline:true,startTime:Date.now(),addedMins:0,expectedDuration:Math.min(d,120)};commit()},
 tledit(id){const x=S.timeline.find(y=>y.id===id)||{};sheet(x.id?'Edit block':'New block',lab('Time',inp('f1',x.time||'','type="time"'))+lab('Label',inp('f2',x.label||'')),'tlsave',x.id,x.id&&'tldel')},
 tlsave(id){const time=$('f1').value,label=$('f2').value.trim();if(!time||!label)return toast('Add a time and a label');H();if(id)Object.assign(S.timeline.find(x=>x.id===id),{time,label});else S.timeline.push({id:'t'+Date.now(),time,label,color:'var(--blue)'});S.timeline.sort((a,b)=>mins(a.time)-mins(b.time));close();commit()},
 tldel(id){H();S.timeline=S.timeline.filter(x=>x.id!==id);close();commit()},
 intent(){const m=S.morning_intentions.find(x=>x.date===dk(new Date()))||{};sheet('Today’s priorities',lab('Priority 1',inp('f1',m.p1))+lab('Priority 2',inp('f2',m.p2))+lab('Priority 3',inp('f3',m.p3))+lab('Must not fail (copy one from above)',inp('f4',m.critical)),'intentsave')},
-intentsave(){const p1=$('f1').value.trim(),p2=$('f2').value.trim(),p3=$('f3').value.trim(),critical=$('f4').value.trim();if(!p1&&!p2&&!p3)return close();H();const t=dk(new Date()),i=S.morning_intentions.findIndex(x=>x.date===t),e={date:t,p1,p2,p3,critical,timestamp:Date.now()};if(i>=0)S.morning_intentions[i]=e;else{S.morning_intentions.push(e);gain(5,'Priorities set')}close();commit()},
-win(){const t=$('wi').value.trim();if(!t)return;H();S.win_log.push({text:t,timestamp:Date.now()});gain(5,'Win logged');commit()},
-tax(){if(!confirm('Pay the dopamine tax? It costs 50 XP and resets your detox streak.'))return;H();gain(-50,'Dopamine tax');S.detox_streak=0;S.detox_last_tax_date=dk(new Date());S.tasks.push(mk({title:'Tax: 40 push-ups or 20 min in a blank editor',xp:0,category:'DISCIPLINE',priority:'critical'}));commit()},
-debt(){const d=S.discipline_debt;if(!(d>0))return;H();S.tasks.push(mk({title:`Debt clearance: ${d} critical task${d>1?'s':''} (25 push-ups or 20 min deep work each)`,xp:d*30,category:'DISCIPLINE',priority:'critical'}));S.discipline_debt=0;commit()},
+intentsave(){const p1=$('f1').value.trim(),p2=$('f2').value.trim(),p3=$('f3').value.trim(),critical=$('f4').value.trim();if(!p1&&!p2&&!p3)return close();H();const t=dk(new Date()),i=S.morning_intentions.findIndex(x=>x.date===t),e={date:t,p1,p2,p3,critical,timestamp:Date.now()};if(i>=0)S.morning_intentions[i]=e;else S.morning_intentions.push(e);close();commit()},
+win(){const t=$('wi').value.trim();if(!t)return;H();S.win_log.push({text:t,timestamp:Date.now()});commit()},
+tax(){if(!confirm('Pay the dopamine tax? It resets your detox streak.'))return;H();S.detox_streak=0;S.detox_last_tax_date=dk(new Date());S.tasks.push(mk({title:'Tax: 40 push-ups or 20 min in a blank editor',category:'DISCIPLINE',priority:'critical'}));commit()},
+debt(){const d=S.discipline_debt;if(!(d>0))return;H();S.tasks.push(mk({title:`Debt clearance: ${d} critical task${d>1?'s':''} (25 push-ups or 20 min deep work each)`,category:'DISCIPLINE',priority:'critical'}));S.discipline_debt=0;commit()},
 ex(id){const e=S.exercises.find(x=>x.id===id)||{};sheet(e.id?'Edit exercise':'New exercise',lab('Name',inp('f1',e.name))+lab('Muscle group',inp('f2',e.group))+`<div class="two"><div>${lab('Target sets',inp('f3',e.targetSets||3,'type="number"'))}</div><div>${lab('Reps or seconds',inp('f4',e.targetReps||10,'type="number"'))}</div></div><label class="ckl"><input id="f5" type="checkbox"${e.isHold?' checked':''}> Timed hold (seconds)</label>`,'exsave',e.id,e.id&&'exdel')},
 exsave(id){const name=$('f1').value.trim();if(!name)return toast('Add a name');H();const o={name,group:$('f2').value.trim().toUpperCase(),targetSets:+$('f3').value||3,targetReps:+$('f4').value||10,isHold:$('f5').checked};if(id)Object.assign(S.exercises.find(x=>x.id===id),o);else S.exercises.push({id:'e'+Date.now(),prSets:0,prReps:0,...o});close();commit()},
 exdel(id){H();S.exercises=S.exercises.filter(x=>x.id!==id);close();commit()},
 log(id){sheet('Log session',lab('Exercise',`<select id="f1">${S.exercises.map(e=>`<option value="${esc(e.id)}"${e.id===id?' selected':''}>${esc(e.name)}</option>`).join('')}</select>`)+`<div class="two"><div>${lab('Sets',inp('f2','','type="number" min="1"'))}</div><div>${lab('Reps',inp('f3','','type="number" min="1"'))}</div></div>`+lab('Duration (min, optional)',inp('f4','','type="number" min="0"'))+lab('Notes',inp('f5')),'logsave')},
 logsave(){const ex=S.exercises.find(x=>x.id===$('f1').value),sets=parseInt($('f2').value),reps=parseInt($('f3').value),duration=parseInt($('f4').value)||0;if(!ex||!sets||!reps)return toast('Enter sets and reps');H();
-S.workout_log.push({date:Date.now(),exerciseId:ex.id,exerciseName:ex.name,sets,reps,duration,notes:$('f5').value.trim()});let xp=100+(duration>0?Math.min(30,duration*2):0);const lt=sets*reps;
-if(lt>=ex.targetSets*ex.targetReps){ex.targetReps+=ex.isHold?5:1;xp+=50;toast('Progressive overload achieved')}
-if(lt>(ex.prSets||0)*(ex.prReps||0)){ex.prSets=sets;ex.prReps=reps;xp+=50}gain(xp,'Session logged');close();commit()},
+S.workout_log.push({date:Date.now(),exerciseId:ex.id,exerciseName:ex.name,sets,reps,duration,notes:$('f5').value.trim()});const lt=sets*reps;
+if(lt>=ex.targetSets*ex.targetReps){ex.targetReps+=ex.isHold?5:1;toast('Progressive overload achieved')}
+if(lt>(ex.prSets||0)*(ex.prReps||0)){ex.prSets=sets;ex.prReps=reps}close();commit()},
 bud(){const s=$('bi').value.trim();if(!s)return toast('Enter an amount and item');let amount=0,mode='Online',category='Miscellaneous',person='',item='';const rest=[];
 s.split(/\s+/).forEach(p=>{const n=parseFloat(p);if(!isNaN(n))amount=n;else if(p.toLowerCase()==='cash')mode='Cash';else if(p.toLowerCase()==='online')mode='Online';else rest.push(p)});
 const ci=rest.findIndex(p=>catMap[p.toLowerCase()]);
