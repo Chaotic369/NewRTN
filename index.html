@@ -40,6 +40,15 @@ button{cursor:pointer}button:focus-visible{outline:none}
 .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
 .act{background:var(--s2)}.big{font-size:44px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.hl{position:relative;flex:1;min-width:0}
+.hl input{position:relative}
+.th{position:absolute;inset:0;padding:0 16px;line-height:44px;font-size:16px;white-space:pre;overflow:hidden;color:transparent;pointer-events:none}
+.th mark{background:color-mix(in srgb,var(--ac) 28%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--ac) 28%,transparent);border-radius:5px;color:transparent}
+.tp{display:flex;align-items:center;gap:8px;margin:0 4px 8px;padding:6px 6px 6px 14px;background:var(--s);border-radius:22px;box-shadow:0 4px 18px rgba(0,0,0,.12);font-size:14px}
+.tp[hidden]{display:none}
+.tp span{flex:1;min-width:0;color:var(--tm)}
+.dock .tp .btn{min-height:34px;min-width:52px;border-radius:17px}
+.tp .ic{min-height:34px;min-width:34px;font-size:15px}
 .tile{background:var(--s);border-radius:14px;padding:12px}.tile b{display:block;font-size:20px;letter-spacing:-.02em}.tile span{font-size:13px;color:var(--tm)}.tile.w{grid-column:1/-1}
 .pos{color:var(--ok)}.neg{color:var(--er)}.grp{margin-top:12px}
 .pb{height:4px;border-radius:4px;background:var(--s2);margin:4px 0 8px;overflow:hidden}.pb i{display:block;height:100%;background:var(--ac)}
@@ -122,15 +131,37 @@ save()}
 let tt;function toast(m){const e=$('to');e.textContent=m;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),2200)}
 const H=()=>{hist.push(JSON.stringify(S));if(hist.length>50)hist.shift()},commit=()=>{save();render()};
 
+/* Time detection: ranges (8-10pm, 8pm-10pm), single times (8pm, 14:30), ambiguous ones ask AM/PM */
+let tdis='';
+function tparse(s){const P=(h,m,p)=>({h:+h,m:+(m||0),p:(p||'').toLowerCase()}),N=x=>((x.h%12)+(x.p==='pm'?12:0))*60+x.m,F=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0'),O=x=>x.p==='am'?'pm':'am';
+let m=s.match(/(?<![\d:])(\d{1,2})(?::([0-5]\d))?\s*(am|pm)?\s*(?:-|–|—|to)\s*(\d{1,2})(?::([0-5]\d))?\s*(am|pm)?(?![\d:])/i);
+if(m){const a=P(m[1],m[2],m[3]),b=P(m[4],m[5],m[6]),ok=a.h<=23&&b.h<=23&&(!(a.p||b.p)||(a.h>=1&&a.h<=12&&b.h>=1&&b.h<=12));
+if(ok){const r={text:m[0],i:m.index},c24=!a.p&&!b.p&&(a.h>12||b.h>12||m[1][0]==='0'||m[4][0]==='0');let s1,e1;
+if(c24){s1=a.h*60+a.m;e1=b.h*60+b.m}
+else{if(!a.p&&!b.p)return{...r,ask:true};
+if(!b.p){b.p=a.p;if(N(b)<=N(a))b.p=O(a)}else if(!a.p){a.p=b.p;if(N(a)>=N(b))a.p=O(b)}
+s1=N(a);e1=N(b)}
+let d=e1-s1;if(d<=0)d+=1440;return{...r,ask:false,time:F(s1),dur:Math.min(d,1440)}}}
+m=s.match(/(?<![\d:])(\d{1,2})(?::([0-5]\d))?\s*(am|pm)\b/i);
+if(m&&+m[1]>=1&&+m[1]<=12){const x=P(m[1],m[2],m[3]);return{text:m[0],i:m.index,ask:false,time:F(N(x))}}
+m=s.match(/(?<![\d:])([01]?\d|2[0-3]):([0-5]\d)(?![\d:])/);
+if(m)return{text:m[0],i:m.index,ask:false,time:F(+m[1]*60+ +m[2])};
+m=s.match(/(?<![\d:#!.\w-])(\d{1,2})(?![\d:.]|\s*(?:xp|%|min|kg|[-–—]|to\b|am|pm))/i);
+if(m&&+m[1]>=1&&+m[1]<=12)return{text:m[0],i:m.index,ask:true,bare:true};
+return null}
+function tui(){const el=$('ti');if(!el)return;const v=el.value,m=tparse(v),h=$('th'),p=$('tp');if(!m||!m.ask)tdis='';
+const hm=m&&!(m.ask&&m.text===tdis)?m:null;
+if(h){h.innerHTML=hm?esc(v.slice(0,hm.i))+'<mark>'+esc(hm.text)+'</mark>'+esc(v.slice(hm.i+hm.text.length)):esc(v);h.scrollLeft=el.scrollLeft}
+if(p){const s=!!m&&m.ask&&m.text!==tdis;p.hidden=!s;if(s)p.innerHTML=`<span>${esc(m.text)} · ${m.bare?'is this a time?':'AM or PM?'}</span><button class="btn" data-a="tap" data-i="am">AM</button><button class="btn" data-a="tap" data-i="pm">PM</button><button class="ic" data-a="tano" aria-label="Not a time">✕</button>`}}
+
 /* Tasks: same quick-add syntax as before */
-function parse(raw){let t=raw,xp=25,time=null,category=null,priority='normal',repeat=null,m;
+function parse(raw){let t=raw,xp=25,time=null,duration=25,category=null,priority='normal',repeat=null,m;
 if(m=t.match(/(\d+)\s*xp/i)){xp=+m[1];t=t.replace(m[0],'')}
-if(m=t.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i)){let h=+m[1];const md=m[3].toLowerCase();if(h===12)h=md==='am'?0:12;else if(md==='pm')h+=12;time=String(h).padStart(2,'0')+':'+(m[2]||'00');t=t.replace(m[0],'')}
-else if(m=t.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/)){time=m[0];t=t.replace(m[0],'')}
+{const tm=tparse(t);if(tm&&!tm.ask){time=tm.time;if(tm.dur)duration=tm.dur;t=t.slice(0,tm.i)+t.slice(tm.i+tm.text.length)}}
 if(m=t.match(/#([A-Za-z]+)/)){category=m[1].toUpperCase();t=t.replace(m[0],'')}
 if(/!critical/i.test(t)){priority='critical';t=t.replace(/!critical/i,'')}else if(/!high/i.test(t)){priority='high';t=t.replace(/!high/i,'')}
 if(m=t.match(/repeat:(daily|weekly)/i)){repeat=m[1].toLowerCase();t=t.replace(m[0],'')}
-const title=t.replace(/\s+/g,' ').trim();return title?mk({title,xp,time,category,priority,repeat}):null}
+const title=t.replace(/\s+/g,' ').trim();return title?mk({title,xp,time,duration,category,priority,repeat}):null}
 
 /* Budget: same shorthand as before */
 const catMap={v:'Vegetable',vegetable:'Vegetable',fr:'Fruit',fruit:'Fruit',f:'Fruit',m:'Milk',milk:'Milk',g:'Gas',gas:'Gas',ff:'Fast food','fast food':'Fast food',r:'Food ration','food ration':'Food ration',gt:'Given to','given to':'Given to',tf:'Taken from','taken from':'Taken from'};
@@ -175,7 +206,7 @@ return `<section class="card"><div class="row" style="padding-top:0"><div class=
 +`<section class="card"><h2>Weight target</h2><div class="add"><input type="number" step="0.1" value="${w}" placeholder="Current kg" data-ch="weight"><span class="chip" style="align-self:center">of 55 kg</span></div><div class="pb" style="margin-top:10px"><i style="width:${wp}%"></i></div></section>`}
 };
 
-const DK={today:()=>`<div class="add"><input id="ti" placeholder="Add a task…" data-enter="addtask" enterkeyhint="send" autocomplete="off"><button class="btn p" data-a="addtask">Add</button></div>`,
+const DK={today:()=>`<div class="tp" id="tp" hidden></div><div class="add"><div class="hl"><div class="th" id="th" aria-hidden="true"></div><input id="ti" placeholder="Add a task… e.g. Study 8-10pm" data-enter="addtask" enterkeyhint="send" autocomplete="off"></div><button class="btn p" data-a="addtask">Add</button></div>`,
 budget:()=>`<div class="chips">${[['v','Veg'],['f','Fruit'],['m','Milk'],['g','Gas'],['ff','Fast food'],['r','Ration'],['gt','Given to'],['tf','Taken from']].map(([k,n])=>`<button class="chip" data-a="cat" data-i="${k}">${n}</button>`).join('')}</div><div class="add"><input id="bi" placeholder="Amount and item, e.g. 120 v cash" data-enter="bud" enterkeyhint="send" autocomplete="off" autocapitalize="none"><button class="btn p" data-a="bud">Add</button></div>`};
 function render(){$('v').innerHTML=V[tab]();if(dkT!==tab){dkT=tab;$('dk').innerHTML=DK[tab]?DK[tab]():'';$('dk').hidden=!DK[tab];document.body.classList.toggle('dk',!!DK[tab])}document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab))}
 
@@ -188,7 +219,9 @@ close,
 theme(){const d=document.documentElement,n=d.dataset.theme==='dark'?'light':'dark';d.dataset.theme=n;try{localStorage.setItem('sp_theme',n)}catch(e){}tc()},
 undo(){if(!hist.length)return toast('Nothing to undo');S=JSON.parse(hist.pop());fix();commit();toast('Undone')},
 sync(){close();toast('Syncing…');sync()},
-addtask(){const t=parse($('ti').value);if(!t)return;H();S.tasks.push(t);$('ti').value='';commit()},
+addtask(){const q=tparse($('ti').value);if(q&&q.ask&&!q.bare&&q.text!==tdis)return toast('Pick AM or PM for '+q.text);const t=parse($('ti').value);if(!t)return;H();S.tasks.push(t);$('ti').value='';tdis='';tui();commit()},
+tap(p){const el=$('ti'),m=tparse(el.value);if(!m||!m.ask)return;const e=m.i+m.text.length;el.value=el.value.slice(0,e)+p+el.value.slice(e);el.focus();el.setSelectionRange(e+2,e+2);tui()},
+tano(){const m=tparse($('ti').value);if(m&&m.ask)tdis=m.text;tui();$('ti').focus()},
 done(id){const t=S.tasks.find(x=>x.id===id);if(!t)return;H();
 if(t.failed){t.failed=false;t.completedAt=null;return commit()}
 if(t.completed){if(t._xpAwarded)gain(-t._xpAwarded,'Task reopened');t.completed=false;t.completedAt=null;t._xpAwarded=0;return commit()}
@@ -241,6 +274,8 @@ document.addEventListener('click',e=>{const n=e.target.closest('nav button');if(
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.enter)A[e.target.dataset.enter]()});
 document.addEventListener('change',e=>{const k=e.target.dataset.ch;if(k)C[k](e.target.value)});
 $('sh').addEventListener('click',e=>{if(e.target===$('sh'))close()});
+document.addEventListener('input',e=>{if(e.target.id==='ti')tui()});
+document.addEventListener('scroll',e=>{if(e.target.id==='ti'){const h=$('th');if(h)h.scrollLeft=e.target.scrollLeft}},true);
 let gy=null,gd=0;
 document.addEventListener('pointerdown',e=>{const g=e.target.closest('.grab');if(!g)return;gy=e.clientY;gd=0;try{g.setPointerCapture(e.pointerId)}catch(x){}$('sh').style.transition='none'});
 document.addEventListener('pointermove',e=>{if(gy===null)return;gd=Math.max(0,e.clientY-gy);$('sh').style.transform=`translateY(${gd}px)`});
