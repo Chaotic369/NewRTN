@@ -51,6 +51,11 @@ nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-w
 nav button{flex:1;border:0;background:none;padding:8px 0 6px;min-height:56px;color:var(--tm);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:3px}nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}nav .on{color:var(--ac);font-weight:600}
 dialog{border:0;border-radius:18px 18px 0 0;background:var(--s);color:var(--tx);width:100%;max-width:520px;margin:auto auto 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:90dvh}
 dialog::backdrop{background:rgba(0,0,0,.45)}
+html:has(dialog[open]),body:has(dialog[open]){overflow:hidden}
+dialog{overscroll-behavior:contain}
+dialog[open]::before{display:none}
+.grab{height:44px;margin:-18px -16px 6px;display:flex;justify-content:center;align-items:center;touch-action:none;cursor:grab}
+.grab::before{content:"";width:36px;height:4px;border-radius:4px;background:var(--bd)}
 @media(min-width:600px){dialog{margin:auto;border-radius:18px}}
 dialog label{display:block;font-size:13px;color:var(--tm);margin:12px 0 4px}dialog .ckl{display:flex;gap:8px;align-items:center;margin-top:14px;color:var(--tx)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -176,7 +181,7 @@ function render(){$('v').innerHTML=V[tab]();if(dkT!==tab){dkT=tab;$('dk').innerH
 
 /* Sheets */
 const lab=(t,h)=>`<label>${t}</label>${h}`,inp=(id,v='',x='')=>`<input id="${id}" value="${esc(v)}" ${x}>`,close=()=>$('sh').close();
-function sheet(title,body,save,id,del,lbl='Save'){const d=$('sh');d.innerHTML=`<h3>${title}</h3>${body}<div class="btns"><button class="btn" data-a="close">Cancel</button>${del?`<button class="btn d" data-a="${del}" data-i="${esc(id)}">Delete</button>`:''}${save?`<button class="btn p" data-a="${save}" data-i="${esc(id||'')}">${lbl}</button>`:''}</div>`;if(!d.open)d.showModal()}
+function sheet(title,body,save,id,del,lbl='Save'){const d=$('sh');d.innerHTML=`<div class="grab"></div><h3>${title}</h3>${body}<div class="btns"><button class="btn" data-a="close">Cancel</button>${del?`<button class="btn d" data-a="${del}" data-i="${esc(id)}">Delete</button>`:''}${save?`<button class="btn p" data-a="${save}" data-i="${esc(id||'')}">${lbl}</button>`:''}</div>`;if(!d.open)d.showModal()}
 
 const A={
 close,
@@ -236,6 +241,12 @@ document.addEventListener('click',e=>{const n=e.target.closest('nav button');if(
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.enter)A[e.target.dataset.enter]()});
 document.addEventListener('change',e=>{const k=e.target.dataset.ch;if(k)C[k](e.target.value)});
 $('sh').addEventListener('click',e=>{if(e.target===$('sh'))close()});
+let gy=null,gd=0;
+document.addEventListener('pointerdown',e=>{const g=e.target.closest('.grab');if(!g)return;gy=e.clientY;gd=0;try{g.setPointerCapture(e.pointerId)}catch(x){}$('sh').style.transition='none'});
+document.addEventListener('pointermove',e=>{if(gy===null)return;gd=Math.max(0,e.clientY-gy);$('sh').style.transform=`translateY(${gd}px)`});
+const gend=()=>{if(gy===null)return;const d=$('sh'),far=gd>100;gy=null;gd=0;d.style.transition='';if(far)close();d.style.transform=''};
+document.addEventListener('pointerup',gend);
+document.addEventListener('pointercancel',gend);
 $('v').addEventListener('toggle',e=>{if(e.target.id==='tld')tlOpen=e.target.open},true);
 setInterval(()=>{const a=S.activeTask,e=$('tm');if(!a||!e)return;const s=(a.expectedDuration+a.addedMins)*60-(Date.now()-a.startTime)/1000,m=Math.abs(s);e.textContent=(s<0?'+':'')+Math.floor(m/60)+':'+String(Math.floor(m%60)).padStart(2,'0');e.style.color=s<0?'var(--er)':''},1000);
 
