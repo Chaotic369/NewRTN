@@ -41,9 +41,9 @@ button{cursor:pointer}button:focus-visible{outline:none}
 .act{background:var(--s2)}.big{font-size:44px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .hl{position:relative;flex:1;min-width:0}
-.hl input{position:relative}
-.th{position:absolute;inset:0;padding:0 16px;line-height:44px;font-size:16px;white-space:pre;overflow:hidden;color:transparent;pointer-events:none}
-.th mark{background:color-mix(in srgb,var(--ac) 28%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--ac) 28%,transparent);border-radius:5px;color:transparent}
+.hl input{position:relative;color:transparent;caret-color:var(--tx)}
+.th{position:absolute;inset:0;padding:0 16px;line-height:44px;font-size:16px;white-space:pre;overflow:hidden;color:var(--tx);pointer-events:none}
+.th mark{background:none;color:var(--ac)}
 .tp{display:flex;align-items:center;gap:8px;margin:0 4px 8px;padding:6px 6px 6px 14px;background:var(--s);border-radius:22px;box-shadow:0 4px 18px rgba(0,0,0,.12);font-size:14px}
 .tp[hidden]{display:none}
 .tp span{flex:1;min-width:0;color:var(--tm)}
